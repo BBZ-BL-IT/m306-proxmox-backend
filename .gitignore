@@ -1,0 +1,9 @@
+/target
+.idea
+
+# Sensitive files
+*.env
+*.pat
+
+# Exclude .example
+!.env.example

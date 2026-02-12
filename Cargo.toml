@@ -1,0 +1,26 @@
+[package]
+name = "loomox"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+# Core dependencies
+tokio = { version = "1", features = ["full"] }
+axum = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# HTTP
+reqwest = { version = "0.13", features = ["json"] }
+
+# Observability
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Environment variables
+dotenvy = "0.15"
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
