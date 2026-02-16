@@ -1,3 +1,1 @@
-///
-/// We'll define our handlers for our routes here
-///
+pub(crate) mod health;
