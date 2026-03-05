@@ -1,10 +1,14 @@
 use std::net::SocketAddr;
 
-use crate::{config::AppConfig, state, web};
+use crate::{clients::ProxmoxClient, config::AppConfig, state, web};
 
 pub async fn run(config: AppConfig) -> anyhow::Result<()> {
     let state = state::State {
-        proxmox_url: config.proxmox_url,
+        proxmox: ProxmoxClient::new(
+            config.proxmox_url,
+            config.proxmox_token_id,
+            config.proxmox_token_secret,
+        ),
     };
 
     let app = web::build_router(state);
