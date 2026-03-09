@@ -1,0 +1,442 @@
+openapi: 3.0.3
+info:
+  title: Loomox API
+  description: Proxmox management backend API
+  version: 0.1.0
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Config
+    description: Configuration and provisioning endpoints
+  - name: Users
+    description: User management endpoints
+  - name: Groups
+    description: Group management endpoints
+  - name: Infrastructure
+    description: Infrastructure and firewall endpoints
+  - name: Nodes
+    description: Node management endpoints
+  - name: VMs
+    description: Virtual machine management endpoints
+  - name: Storage
+    description: Storage management endpoints
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns the service health status and version
+      operationId: checkHealth
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /api/config/create:
+    post:
+      tags:
+        - Config
+      summary: Create configuration
+      description: >
+        Creation form — provisions modules, groups, firewall, and
+        infrastructure in Proxmox.
+      operationId: createConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateConfigRequest"
+      responses:
+        "201":
+          description: Configuration created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/config/update:
+    put:
+      tags:
+        - Config
+      summary: Update configuration
+      description: >
+        Settings form — updates resource configuration (firewall,
+        network config) for an existing resource.
+      operationId: updateConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateConfigRequest"
+      responses:
+        "202":
+          description: Configuration update accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/config/storage:
+    get:
+      tags:
+        - Storage
+      summary: List storage
+      description: Returns a list of available storage with usage details
+      operationId: listStorage
+      responses:
+        "200":
+          description: List of storage entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StorageEntry"
+
+  /api/user/list:
+    get:
+      tags:
+        - Users
+      summary: List users
+      description: Returns a flat list of all usernames
+      operationId: listUsers
+      responses:
+        "200":
+          description: List of usernames
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /api/group/list:
+    get:
+      tags:
+        - Groups
+      summary: List groups
+      description: Returns a flat list of all group names
+      operationId: listGroups
+      responses:
+        "200":
+          description: List of group names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /api/infrastructure/{vm_id}:
+    get:
+      tags:
+        - Infrastructure
+      summary: Get infrastructure info
+      description: Returns firewall and infrastructure information for a VM
+      operationId: getInfrastructure
+      parameters:
+        - name: vm_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: The VM ID to query
+      responses:
+        "200":
+          description: Infrastructure information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureInfo"
+        "400":
+          description: Invalid VM ID or VM not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/node/list:
+    get:
+      tags:
+        - Nodes
+      summary: List nodes
+      description: Returns a flat list of all node name strings
+      operationId: listNodes
+      responses:
+        "200":
+          description: List of node names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /api/vm/list:
+    get:
+      tags:
+        - VMs
+      summary: List VMs
+      description: Returns a flat list of all VM name strings
+      operationId: listVms
+      responses:
+        "200":
+          description: List of VM names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - version
+      properties:
+        status:
+          type: string
+          description: Service health status
+          example: ok
+        version:
+          type: string
+          description: Application version
+          example: 0.1.0
+
+    MessageResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Human-readable result message
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+
+    CreateConfigRequest:
+      type: object
+      required:
+        - modul_configuration
+        - global_infrastructure_setup
+        - group_details
+      properties:
+        modul_configuration:
+          $ref: "#/components/schemas/ModulConfiguration"
+        global_infrastructure_setup:
+          $ref: "#/components/schemas/GlobalInfrastructureSetup"
+        group_details:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroupDetail"
+
+    ModulConfiguration:
+      type: object
+      required:
+        - modulnumber
+        - class
+        - global_usernames
+        - group_amount
+      properties:
+        modulnumber:
+          type: string
+          description: Module number (e.g. M300)
+          example: M300
+        class:
+          type: string
+          description: Class identifier (e.g. INF24-b)
+          example: INF24-b
+        global_usernames:
+          type: array
+          items:
+            type: string
+          description: List of usernames with access to all groups
+        group_amount:
+          type: integer
+          format: int32
+          description: Number of groups to create
+
+    GlobalInfrastructureSetup:
+      type: object
+      required:
+        - node
+        - firewall_setup
+      properties:
+        node:
+          type: string
+          description: Target Proxmox node name
+          example: pve-host-02
+        firewall_setup:
+          $ref: "#/components/schemas/FirewallSetup"
+
+    FirewallSetup:
+      type: object
+      required:
+        - firewall_enabled
+        - apply_firewall_interfaces_config
+      properties:
+        firewall_enabled:
+          type: boolean
+          description: Whether the firewall is enabled
+        firewall_vm_id:
+          type: integer
+          format: int64
+          description: VM ID of the firewall appliance
+          nullable: true
+        apply_firewall_interfaces_config:
+          type: boolean
+          description: Whether to apply firewall interface configuration
+
+    GroupDetail:
+      type: object
+      required:
+        - group_name
+        - userlist
+      properties:
+        group_name:
+          type: string
+          description: Name of the group
+          example: Gruppe-Alpha
+        userlist:
+          type: array
+          items:
+            type: string
+          description: List of usernames in this group
+
+    UpdateConfigRequest:
+      type: object
+      required:
+        - resource_type
+        - resource_id
+        - firewall_networkconfig
+      properties:
+        resource_type:
+          type: string
+          description: "Type of resource (e.g. virtual_machine)"
+          example: virtual_machine
+        resource_id:
+          type: integer
+          format: int64
+          description: Resource ID
+        firewall_networkconfig:
+          type: string
+          description: Firewall network configuration identifier
+          example: vm0000-10257
+
+    StorageEntry:
+      type: object
+      required:
+        - storage
+        - type
+        - content
+        - active
+        - shared
+        - total
+        - used
+        - avail
+      properties:
+        storage:
+          type: string
+          description: Storage ID
+          example: local
+        type:
+          type: string
+          description: Storage type
+          example: dir
+        content:
+          type: string
+          description: Allowed content types
+          example: "iso,vztmpl,backup"
+        active:
+          type: boolean
+          description: Whether the storage is active
+        shared:
+          type: boolean
+          description: Whether the storage is shared
+        total:
+          type: integer
+          format: int64
+          description: Total space in bytes
+        used:
+          type: integer
+          format: int64
+          description: Used space in bytes
+        avail:
+          type: integer
+          format: int64
+          description: Available space in bytes
+
+    InfrastructureInfo:
+      type: object
+      required:
+        - vm_id
+        - firewall_enabled
+      properties:
+        vm_id:
+          type: integer
+          format: int64
+          description: The VM ID
+        firewall_enabled:
+          type: boolean
+          description: Whether the firewall is enabled for this VM
+        network_interfaces:
+          type: array
+          items:
+            $ref: "#/components/schemas/NetworkInterface"
+          description: Network interfaces attached to this VM
+          nullable: true
+
+    NetworkInterface:
+      type: object
+      required:
+        - name
+        - bridge
+      properties:
+        name:
+          type: string
+          description: Interface name
+          example: net0
+        bridge:
+          type: string
+          description: Bridge this interface is connected to
+          example: vmbr0
+        firewall:
+          type: boolean
+          description: Whether firewall is enabled on this interface
+          nullable: true
+        tag:
+          type: integer
+          format: int32
+          description: VLAN tag
+          nullable: true
