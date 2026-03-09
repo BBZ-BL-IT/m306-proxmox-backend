@@ -1,10 +1,7 @@
 mod app;
 mod clients;
 mod config;
-mod errors;
-mod routes;
 mod state;
-mod web;
 
 #[tokio::main]
 async fn main() {

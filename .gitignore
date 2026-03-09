@@ -1,9 +1,14 @@
+# Build artifacts
 /target
+generated-api/target
+
+# IDE
 .idea
 
 # Sensitive files
 *.env
 *.pat
-
-# Exclude .example
 !.env.example
+
+# Node (openapi-generator-cli)
+node_modules
