@@ -11,4 +11,3 @@
 # Nix
 .envrc
 .direnv
-flake.lock
