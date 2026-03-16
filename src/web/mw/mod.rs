@@ -1,3 +1,1 @@
-///
-/// mw is the place for our middleware or mine depending on the team motivation...
-///
+mod auth_basic;
