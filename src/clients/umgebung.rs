@@ -21,11 +21,8 @@ impl UmgebungClient {
             state.proxmox_token_id, state.proxmox_token_secret
         );
 
-        let client = reqwest::Client::builder()
-            .danger_accept_invalid_certs(true)
-            .build()?;
-
-        let response = client
+        let response = state
+            .http_client
             .post(&url)
             .header("Authorization", &auth_header)
             .form(&[
