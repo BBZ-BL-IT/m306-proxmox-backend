@@ -14,6 +14,7 @@ pub fn build_routes(state: AppState) -> Router {
             "/umgebung/create",
             post(handlers::umgebung::create_umgebung),
         )
+        .route("/nodes", get(handlers::nodes::list_nodes))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             mw::auth_basic::basic_auth,
