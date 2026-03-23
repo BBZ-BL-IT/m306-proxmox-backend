@@ -4,4 +4,3 @@
 pub struct State {
     pub proxmox_url: String,
 }
-
