@@ -6,6 +6,8 @@ use serde::Deserialize;
 pub struct AppConfig {
     pub server_port: u16,
     pub proxmox_url: String,
+    pub proxmox_token_id: String,
+    pub proxmox_token_secret: String,
     pub username_admin: String,
     pub password_admin: String,
 }
