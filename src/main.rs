@@ -1,4 +1,5 @@
 mod app;
+mod domain;
 mod clients;
 mod config;
 mod errors;
