@@ -3,7 +3,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 
-use crate::clients::ProxmoxAPI;
+use crate::clients::umgebung::UmgebungClient;
 use crate::state::AppState;
 use crate::web::dto::CreateEnvironmentRequest;
 
@@ -31,7 +31,7 @@ pub async fn create_umgebung(
                     class.to_lowercase().replace('-', ""),
                     i + 1
                 );
-                if let Err(e) = ProxmoxAPI::create_umgebung(
+                if let Err(e) = UmgebungClient::create_umgebung(
                     &state, node, fw_vm_id, new_vm_id, &fw_name,
                 )
                 .await
