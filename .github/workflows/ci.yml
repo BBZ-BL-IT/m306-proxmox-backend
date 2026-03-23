@@ -47,6 +47,13 @@ jobs:
             type=ref,event=branch
             type=sha
             type=raw,value=latest,enable={{is_default_branch}}
+      - name: Generate Docker config
+        run: |
+          cat <<EOF > config.docker.env
+          APP_PROXMOX_URL=${{ secrets.APP_PROXMOX_URL }}
+          APP_SERVER_PORT=${{ secrets.APP_SERVER_PORT }}
+          RUST_LOG=${{ secrets.RUST_LOG }}
+          EOF
       - uses: docker/build-push-action@v6
         with:
           context: .
