@@ -1,0 +1,12 @@
+target/
+.git/
+.github/
+.env
+*.env
+!config.docker.env
+flake.nix
+flake.lock
+.direnv/
+Dockerfile
+.dockerignore
+README.md

@@ -16,4 +16,3 @@ pub async fn check_health() -> impl IntoResponse {
 
     (StatusCode::OK, Json(response))
 }
-
