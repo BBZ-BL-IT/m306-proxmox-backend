@@ -31,3 +31,31 @@ _Options_:
 - RUST_LOG=warn
 - RUST_LOG=error # least verbose
 - RUST_LOG=off # silence everything
+
+# Todo
+
+- SSL-Certificate on/off env variable
+- Import of proxmox ssl certificate
+
+## Proxmox Testing using cURL 
+ 
+ Environment Variables Required (from .env):
+-   APP_PROXMOX_URL        - Proxmox server URL (e.g., 10.142.203.230:8006)
+-   APP_PROXMOX_TOKEN_ID   - Token ID (e.g., testuser@pam!test_token)
+-   APP_PROXMOX_TOKEN_SECRET - Token secret
+
+**Usage:**
+   ./proxmox_test.sh [command]
+
+**Commands:**
+-   auth                  - Test authentication/version endpoint
+-   nodes                 - List all nodes
+-   vms                   - List all VMs
+-   storage               - List storage resources
+-   diagnose              - Run full diagnostics
+-   help                  - Show this help message
+
+**Examples:**
+-   ./proxmox_test.sh auth
+-   ./proxmox_test.sh diagnose
+-   ./proxmox_test.sh all
