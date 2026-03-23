@@ -26,5 +26,5 @@ config = "0.15"
 thiserror = "2"
 anyhow = "1"
 
-# Toolingä
+# Tooling
 base64 = "0.22"

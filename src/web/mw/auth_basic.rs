@@ -1,5 +1,5 @@
 use axum::{
-    extract::Request,
+    extract::{Request, State},
     http::{StatusCode, header::AUTHORIZATION},
     middleware::Next,
     response::Response,
@@ -8,7 +8,11 @@ use base64::{Engine as _, prelude::BASE64_STANDARD};
 
 use crate::state::AppState;
 
-pub async fn basic_auth(req: Request, next: Next, state: AppState) -> Result<Response, StatusCode> {
+pub async fn basic_auth(
+    State(state): State<AppState>,
+    req: Request,
+    next: Next,
+) -> Result<Response, StatusCode> {
     let auth_header = req
         .headers()
         .get(AUTHORIZATION)

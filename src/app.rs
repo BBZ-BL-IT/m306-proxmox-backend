@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use crate::{config::AppConfig, state, web};
+use crate::{config::AppConfig, routes, state};
 
 pub async fn run(config: AppConfig) -> anyhow::Result<()> {
     let state = state::AppState {
@@ -9,7 +9,7 @@ pub async fn run(config: AppConfig) -> anyhow::Result<()> {
         password_admin: config.password_admin,
     };
 
-    let app = web::build_router(state);
+    let app = routes::build_routes(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.server_port));
     let listener = tokio::net::TcpListener::bind(&addr).await?;

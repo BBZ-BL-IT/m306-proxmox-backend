@@ -1,1 +1,1 @@
-mod auth_basic;
+pub(crate) mod auth_basic;
