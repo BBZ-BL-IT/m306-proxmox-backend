@@ -1,4 +1,32 @@
-# Dev Environment
+# Project EggShell - Proxmox Backend API
+
+A lightweight Rust backend service for managing Proxmox virtualization environments.
+
+## Features
+
+- **Proxmox API Integration** - Proxy and manage Proxmox API calls
+- **Basic Authentication** - Token-based auth for secure API access
+- **Health Checks** - Endpoint monitoring and diagnostics
+- **Async Request Handling** - High-performance concurrent request processing
+- **Comprehensive Logging** - Structured tracing for debugging and monitoring
+
+## Tech Stack
+
+- **Language**: Rust (Edition 2024)
+- **Web Framework**: Axum 0.8 (async HTTP)
+- **Async Runtime**: Tokio 1.0
+- **HTTP Client**: Reqwest 0.13
+- **Serialization**: Serde + JSON
+- **Configuration**: Dotenvy + Config
+- **Observability**: Tracing + Tracing Subscriber
+- **Containerization**: Docker support included
+
+## TODO
+
+- [ ] SSL certificate configuration
+- [ ] Proxmox certificate auto-import
+
+## Dev Environment Setup
 
 All Application properties in the **.env** file needs its entries to start with "APP\_"
 
@@ -12,27 +40,14 @@ example:
 
 > RUST_LOG=info
 
-## .env List
+### Environment Variables
 
-- APP_PROXMOX_URL=
-- APP_SERVER_PORT=
-- RUST_LOG=
+All app configs must start with `APP_`:
 
-**APP_PROXMOX_URL** defines the URL on which to call the proxmox api.
-
-**APP_SERVER_PORT** defines the PORT which the application will run on.
-
-**RUST_LOG** defines the logging.
-_Options_:
-
-- RUST_LOG=trace # most verbose
-- RUST_LOG=debug
-- RUST_LOG=info
-- RUST_LOG=warn
-- RUST_LOG=error # least verbose
-- RUST_LOG=off # silence everything
-
-# Todo
-
-- SSL-Certificate on/off env variable
-- Import of proxmox ssl certificate
+| Variable | Description |
+|----------|-------------|
+|`APP_PROXMOX_URL` | Proxmox server URL (e.g., `10.142.203.230:8006`) |
+|`APP_SERVER_PORT` | Server port (default: 3000) |
+|`RUST_LOG` | Log level: `trace`, `debug`, `info`, `warn`, `error`, `off` |
+|`APP_PROXMOX_TOKEN_ID` | Token ID (format: `user@realm!token_name`)
+|`APP_PROXMOX_TOKEN_SECRET` | Token secret
