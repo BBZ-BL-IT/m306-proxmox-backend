@@ -31,7 +31,7 @@ pub fn build_routes(state: AppState, cors_origin: Option<String>) -> Router {
         .route("/api/config/storage", get(handlers::dropdown::list_storage))
         .route("/api/role/list", get(handlers::dropdown::list_roles))
         .route(
-            "/api/infrastructure/:vm_id",
+            "/api/infrastructure/{vm_id}",
             get(handlers::dropdown::get_infrastructure),
         )
         .route("/api/settings", get(handlers::settings::get_settings).put(handlers::settings::update_settings))
