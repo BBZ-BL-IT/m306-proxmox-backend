@@ -42,6 +42,12 @@ pub async fn list_environments(
     State(state): State<AppState>,
     Query(params): Query<ListEnvironmentParams>,
 ) -> impl IntoResponse {
+    tracing::debug!(
+        module = ?params.module,
+        class = ?params.class,
+        group_id = ?params.group_id,
+        "Listing environments"
+    );
     let groups_response = match EnvironmentClient::list_groups(&state).await {
         Ok(data) => data,
         Err(e) => {
@@ -139,8 +145,10 @@ pub async fn list_environments(
         }));
     }
 
+    tracing::debug!("Returning {} environments", environments.len());
     (StatusCode::OK, Json(serde_json::json!(environments))).into_response()
 }
+
 
 pub async fn create_environment(
     State(state): State<AppState>,
@@ -149,6 +157,14 @@ pub async fn create_environment(
     let node = &body.global_infrastructure_setup.node;
     let modulnumber = &body.modul_configuration.modulnumber;
     let class = &body.modul_configuration.class;
+    tracing::debug!(
+        node,
+        modulnumber,
+        class,
+        groups = body.group_details.len(),
+        firewall = body.global_infrastructure_setup.firewall_setup.firewall_enabled,
+        "Creating environment"
+    );
 
     let mut created_groups = Vec::new();
 
@@ -202,6 +218,7 @@ pub async fn create_environment(
         }));
     }
 
+    tracing::debug!("Created {} groups", created_groups.len());
     (
         StatusCode::CREATED,
         Json(serde_json::json!({ "created": created_groups })),
@@ -213,7 +230,7 @@ pub async fn delete_environment(
     State(state): State<AppState>,
     Json(body): Json<DeleteEnvironmentRequest>,
 ) -> impl IntoResponse {
-    // List all groups to find environments matching the requested group_ids
+    tracing::debug!(group_ids = ?body.group_ids, "Deleting environments");
     let groups_response = match EnvironmentClient::list_groups(&state).await {
         Ok(data) => data,
         Err(e) => {
@@ -281,6 +298,13 @@ pub async fn delete_environment(
 
         let mut group_errors = Vec::new();
 
+        tracing::debug!(
+            group_id = %target_group_id,
+            group_name = %parsed.group_name,
+            vms = ?vm_ids,
+            "Deleting environment resources"
+        );
+
         // 1. Stop and delete VMs
         for vm_id in &vm_ids {
             if !node.is_empty() {
@@ -336,6 +360,11 @@ pub async fn delete_environment(
         }
     }
 
+    tracing::debug!(
+        deleted = deleted.len(),
+        errors = errors.len(),
+        "Environment deletion complete"
+    );
     (
         StatusCode::OK,
         Json(serde_json::json!({

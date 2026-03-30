@@ -7,6 +7,7 @@ use crate::clients::nodes::NodesClient;
 use crate::state::AppState;
 
 pub async fn list_nodes(State(state): State<AppState>) -> impl IntoResponse {
+    tracing::debug!("Fetching node list from Proxmox");
     match NodesClient::get_nodes(&state).await {
         Ok(data) => {
             let nodes: Vec<serde_json::Value> = data["data"]
@@ -20,6 +21,7 @@ pub async fn list_nodes(State(state): State<AppState>) -> impl IntoResponse {
                 })
                 .collect();
 
+            tracing::debug!("Found {} nodes", nodes.len());
             (StatusCode::OK, Json(serde_json::json!(nodes))).into_response()
         }
         Err(e) => {

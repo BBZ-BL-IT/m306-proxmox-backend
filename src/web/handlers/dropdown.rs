@@ -8,6 +8,7 @@ use crate::clients::proxmox::ProxmoxClient;
 use crate::state::AppState;
 
 pub async fn list_users(State(state): State<AppState>) -> impl IntoResponse {
+    tracing::debug!("Fetching user list from Proxmox");
     match ProxmoxClient::list_users(&state).await {
         Ok(data) => {
             let users: Vec<String> = data["data"]
@@ -21,6 +22,7 @@ pub async fn list_users(State(state): State<AppState>) -> impl IntoResponse {
                 })
                 .collect();
 
+            tracing::debug!("Found {} users", users.len());
             (StatusCode::OK, Json(serde_json::json!(users))).into_response()
         }
         Err(e) => {
@@ -37,6 +39,7 @@ pub async fn list_users(State(state): State<AppState>) -> impl IntoResponse {
 }
 
 pub async fn list_groups(State(state): State<AppState>) -> impl IntoResponse {
+    tracing::debug!("Fetching group list from Proxmox");
     match ProxmoxClient::list_groups(&state).await {
         Ok(data) => {
             let groups: Vec<serde_json::Value> = data["data"]
@@ -50,6 +53,7 @@ pub async fn list_groups(State(state): State<AppState>) -> impl IntoResponse {
                 })
                 .collect();
 
+            tracing::debug!("Found {} groups", groups.len());
             (StatusCode::OK, Json(serde_json::json!(groups))).into_response()
         }
         Err(e) => {
@@ -66,7 +70,7 @@ pub async fn list_groups(State(state): State<AppState>) -> impl IntoResponse {
 }
 
 pub async fn list_vms(State(state): State<AppState>) -> impl IntoResponse {
-    // First fetch all nodes, then fetch VMs from each node
+    tracing::debug!("Fetching VM list across all nodes");
     let nodes_result = NodesClient::get_nodes(&state).await;
     let node_names: Vec<String> = match nodes_result {
         Ok(data) => data["data"]
@@ -110,10 +114,12 @@ pub async fn list_vms(State(state): State<AppState>) -> impl IntoResponse {
         }
     }
 
+    tracing::debug!("Found {} VMs across {} nodes", vms.len(), node_names.len());
     (StatusCode::OK, Json(serde_json::json!(vms))).into_response()
 }
 
 pub async fn list_storage(State(state): State<AppState>) -> impl IntoResponse {
+    tracing::debug!("Fetching storage list from Proxmox");
     match ProxmoxClient::list_storage(&state).await {
         Ok(data) => {
             let storages: Vec<serde_json::Value> = data["data"]
@@ -134,6 +140,7 @@ pub async fn list_storage(State(state): State<AppState>) -> impl IntoResponse {
                 })
                 .collect();
 
+            tracing::debug!("Found {} storage pools", storages.len());
             (StatusCode::OK, Json(serde_json::json!(storages))).into_response()
         }
         Err(e) => {
@@ -150,6 +157,7 @@ pub async fn list_storage(State(state): State<AppState>) -> impl IntoResponse {
 }
 
 pub async fn list_roles(State(state): State<AppState>) -> impl IntoResponse {
+    tracing::debug!("Fetching role list from Proxmox");
     match ProxmoxClient::list_roles(&state).await {
         Ok(data) => {
             let roles: Vec<serde_json::Value> = data["data"]
@@ -163,6 +171,7 @@ pub async fn list_roles(State(state): State<AppState>) -> impl IntoResponse {
                 })
                 .collect();
 
+            tracing::debug!("Found {} roles", roles.len());
             (StatusCode::OK, Json(serde_json::json!(roles))).into_response()
         }
         Err(e) => {
@@ -182,7 +191,7 @@ pub async fn get_infrastructure(
     State(state): State<AppState>,
     Path(vm_id): Path<u32>,
 ) -> impl IntoResponse {
-    // First find which node the VM is on
+    tracing::debug!(vm_id, "Fetching infrastructure for VM");
     let nodes_result = NodesClient::get_nodes(&state).await;
     let node_names: Vec<String> = match nodes_result {
         Ok(data) => data["data"]
@@ -220,8 +229,12 @@ pub async fn get_infrastructure(
     }
 
     let node = match vm_node {
-        Some(n) => n,
+        Some(n) => {
+            tracing::debug!(vm_id, node = %n, "Found VM on node");
+            n
+        }
         None => {
+            tracing::debug!(vm_id, "VM not found on any node");
             return (
                 StatusCode::NOT_FOUND,
                 Json(serde_json::json!({

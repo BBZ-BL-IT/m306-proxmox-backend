@@ -9,6 +9,7 @@ pub struct HealthResponse {
 }
 
 pub async fn check_health() -> impl IntoResponse {
+    tracing::debug!("Health check requested");
     let response = HealthResponse {
         status: "ok",
         version: env!("CARGO_PKG_VERSION"),
