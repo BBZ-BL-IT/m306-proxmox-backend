@@ -12,6 +12,7 @@ pub struct AppConfig {
     pub ssl_cert_path: Option<String>,
     pub username_admin: String,
     pub password_admin: String,
+    pub cors_origin: Option<String>,
 }
 
 impl AppConfig {
