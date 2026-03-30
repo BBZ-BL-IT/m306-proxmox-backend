@@ -1,0 +1,657 @@
+openapi: 3.0.3
+info:
+  title: Proxmox@BBZ-BL Backend API
+  description: REST API zwischen Frontend und Backend für die Proxmox Automatisierungs-App
+  version: "1.1"
+  contact:
+    name: Team Backend
+    email: ""
+
+servers:
+  - url: http://localhost:8080
+    description: Lokale Entwicklung
+  - url: https://10.142.188.11:8080
+    description: Testsystem
+
+tags:
+  - name: Umgebung erstellen
+    description: "Lastenheft 2.2.2 – Erstellt eine komplette Proxmox-Umgebung"
+  - name: Umgebung löschen
+    description: "Lastenheft 2.2.3 – Listet und löscht bestehende Umgebungen"
+  - name: Einstellungen
+    description: "Lastenheft 2.2.1 – App-Einstellungen verwalten"
+  - name: Dropdown-Daten
+    description: Daten für Formular-Dropdowns und Auswahllisten
+
+paths:
+
+  # ══════════════════════════════════════
+  # Umgebung erstellen (Lastenheft 2.2.2)
+  # ══════════════════════════════════════
+
+  /api/config/create:
+    post:
+      tags: [Umgebung erstellen]
+      summary: Umgebung erstellen
+      description: |
+        Erstellt eine komplette Umgebung pro Gruppe:
+        User Groups, Resourcepool, Simple Zone, VNets, Berechtigungen, Firewall Clone.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEnvironmentRequest"
+            example:
+              modul_configuration:
+                modulnumber: "M300"
+                class: "INF24-b"
+                global_usernames:
+                  - "s.mueller"
+                  - "j.doe"
+                  - "a.schmidt"
+                  - "m.meier"
+                group_amount: 2
+              global_infrastructure_setup:
+                node: "pve-host-02"
+                firewall_setup:
+                  firewall_enabled: false
+                  firewall_vm_id: null
+                  firewall_network_profile: null
+                  apply_firewall_interfaces_config: false
+              group_details:
+                - group_name: "Gruppe-Alpha"
+                  userlist:
+                    - "s.mueller"
+                    - "j.doe"
+                - group_name: "Gruppe-Beta"
+                  userlist:
+                    - "a.schmidt"
+                    - "m.meier"
+      responses:
+        "201":
+          description: Umgebung erfolgreich erstellt
+        "400":
+          description: Ungültige Payload
+
+  # ══════════════════════════════════════
+  # Umgebung löschen (Lastenheft 2.2.3)
+  # ══════════════════════════════════════
+
+  /api/environment/list:
+    get:
+      tags: [Umgebung löschen]
+      summary: Alle Umgebungen auflisten
+      description: |
+        Listet alle erstellten Umgebungen (User Groups mit zugehörigen Ressourcen).
+        Filterbar nach Modul, Klasse, GroupID via Query-Parameter.
+      parameters:
+        - name: module
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter nach Modulnummer (z.B. M306)
+        - name: class
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter nach Klasse (z.B. INF24-b)
+        - name: group_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter nach GroupID (z.B. 001)
+      responses:
+        "200":
+          description: Liste der Umgebungen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Environment"
+              example:
+                - group_id: "001"
+                  group_name: "ugr_m306_inf24b_grp1"
+                  module: "M306"
+                  class: "INF24-b"
+                  node: "pve-host-02"
+                  resource_pool: "rp_m306_inf24b_grp1"
+                  simple_zone: "sz001"
+                  vnets: ["vn001DMZ", "vn001LAN"]
+                  vms: [401, 402]
+                  members: ["s.mueller", "j.doe"]
+                - group_id: "002"
+                  group_name: "ugr_m306_inf24b_grp2"
+                  module: "M306"
+                  class: "INF24-b"
+                  node: "pve-host-02"
+                  resource_pool: "rp_m306_inf24b_grp2"
+                  simple_zone: "sz002"
+                  vnets: ["vn002DMZ", "vn002LAN"]
+                  vms: [403]
+                  members: ["a.schmidt", "m.meier"]
+
+  /api/environment/delete:
+    delete:
+      tags: [Umgebung löschen]
+      summary: Umgebungen löschen
+      description: |
+        Löscht ausgewählte Umgebungen. Entfernt pro Gruppe:
+        VMs/Container, VNets, Simple Zone, Resource Pool, User Group.
+        User bleiben bestehen, nur die Gruppenzugehörigkeit wird entfernt.
+        
+        Löschreihenfolge: VMs stoppen/löschen → VNets → Simple Zone → Resource Pool → User Group.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteEnvironmentRequest"
+            example:
+              group_ids: ["001", "002"]
+      responses:
+        "200":
+          description: Löschvorgang abgeschlossen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteEnvironmentResponse"
+              example:
+                deleted:
+                  - group_id: "001"
+                    status: "success"
+                    deleted_resources:
+                      vms: [401, 402]
+                      vnets: ["vn001DMZ", "vn001LAN"]
+                      simple_zone: "sz001"
+                      resource_pool: "rp_m306_inf24b_grp1"
+                      user_group: "ugr_m306_inf24b_grp1"
+                errors: []
+        "400":
+          description: Ungültige Payload
+        "404":
+          description: GroupID nicht gefunden
+
+  # ══════════════════════════════════════
+  # Einstellungen (Lastenheft 2.2.1)
+  # ══════════════════════════════════════
+
+  /api/settings:
+    get:
+      tags: [Einstellungen]
+      summary: Einstellungen laden
+      description: Lädt die aktuellen App-Einstellungen (Prefixes, Rollen, Storage, WAN-Schnittstelle etc.)
+      responses:
+        "200":
+          description: Aktuelle Einstellungen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+              example:
+                role: "uro_bbzblit_PVELabUsers"
+                user_group_templates: "ugr_bbzblit_Lernende"
+                prefix_user_group: "ug"
+                prefix_resourcepool: "rp"
+                prefix_simple_zone: "sz"
+                prefix_vnets: "vn"
+                postfix_vnet_dmz: "DMZ"
+                postfix_vnet_lan: "LAN"
+                prefix_firewall: "fw"
+                vm_storage: "pvecephpool01"
+                template_storage: "templates"
+                wan_interface: "vmbr1"
+
+    put:
+      tags: [Einstellungen]
+      summary: Einstellungen speichern
+      description: Speichert geänderte App-Einstellungen. Werden lokal in config/app_settings.json persistiert.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Settings"
+      responses:
+        "200":
+          description: Einstellungen gespeichert
+        "400":
+          description: Ungültige Payload
+
+  # ══════════════════════════════════════
+  # Dropdown-Daten
+  # ══════════════════════════════════════
+
+  /api/user/list:
+    get:
+      tags: [Dropdown-Daten]
+      summary: Benutzerliste
+      description: Liste aller Benutzer (für Mehrfachauswahl im Creation Form)
+      responses:
+        "200":
+          description: Liste der Benutzernamen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              example:
+                - "s.mueller"
+                - "j.doe"
+                - "herr.Chalatte"
+                - "herr.Charlotte"
+
+  /api/group/list:
+    get:
+      tags: [Dropdown-Daten]
+      summary: Gruppenliste
+      description: Liste der bestehenden User Groups (für Dropdown in Einstellungen)
+      responses:
+        "200":
+          description: Liste der Gruppen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Group"
+              example:
+                - group_name: "ugr_bbzblit_Lernende"
+                - group_name: "ugr_m306_inf24b_grp1"
+
+  /api/node/list:
+    get:
+      tags: [Dropdown-Daten]
+      summary: Node-Liste
+      description: Verfügbare Cluster-Nodes (für Dropdown im Creation Form)
+      responses:
+        "200":
+          description: Liste der Nodes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Node"
+              example:
+                - node: "pve-host-01"
+                - node: "pve-host-02"
+                - node: "pve-host-03"
+
+  /api/vm/list:
+    get:
+      tags: [Dropdown-Daten]
+      summary: VM-Liste
+      description: Liste aller VMs mit ID, Name und Node (für Firewall-VM Dropdown im Creation Form)
+      responses:
+        "200":
+          description: Liste der VMs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VM"
+              example:
+                - vmid: 401
+                  name: "fw-ipFire"
+                  node: "pve-host-02"
+                - vmid: 123
+                  name: "clt-win-11"
+                  node: "pve-host-03"
+
+  /api/config/storage:
+    get:
+      tags: [Dropdown-Daten]
+      summary: Storage-Liste
+      description: Verfügbare Storage-Pools (für VM-Storage / Template-Storage Dropdowns in Einstellungen)
+      responses:
+        "200":
+          description: Liste der Storages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Storage"
+              example:
+                - storage: "local"
+                  type: "dir"
+                  content: "iso,vztmpl,backup"
+                  active: 1
+                  shared: 0
+                  total: 105900000000
+                  used: 15000000000
+                  avail: 90900000000
+                - storage: "pvecephpool01"
+                  type: "rbd"
+                  content: "images"
+                  active: 1
+                  shared: 1
+                  total: 450000000000
+                  used: 20000000000
+                  avail: 430000000000
+
+  /api/role/list:
+    get:
+      tags: [Dropdown-Daten]
+      summary: Rollen-Liste
+      description: Liste aller Proxmox-Rollen (für Rollen-Dropdown in Einstellungen)
+      responses:
+        "200":
+          description: Liste der Rollen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Role"
+              example:
+                - role: "uro_bbzblit_PVELabUsers"
+                - role: "PVEAdmin"
+                - role: "PVEAuditor"
+
+  /api/infrastructure/{vm_id}:
+    get:
+      tags: [Dropdown-Daten]
+      summary: VM Firewall-Konfiguration
+      description: Aktuelle Firewall-Konfiguration einer bestehenden VM
+      parameters:
+        - name: vm_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: VM-ID
+      responses:
+        "200":
+          description: Firewall-Konfiguration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureResponse"
+              example:
+                firewall_setup:
+                  firewall_enabled: true
+                  firewall_vm_id: 68
+                  firewall_network_profile: 3
+                  apply_firewall_interfaces_config: true
+        "404":
+          description: VM nicht gefunden
+
+# ══════════════════════════════════════
+# Schemas
+# ══════════════════════════════════════
+
+components:
+  schemas:
+
+    CreateEnvironmentRequest:
+      type: object
+      required: [modul_configuration, global_infrastructure_setup, group_details]
+      properties:
+        modul_configuration:
+          type: object
+          required: [modulnumber, class, global_usernames, group_amount]
+          properties:
+            modulnumber:
+              type: string
+              example: "M300"
+            class:
+              type: string
+              example: "INF24-b"
+            global_usernames:
+              type: array
+              items:
+                type: string
+              example: ["s.mueller", "j.doe"]
+            group_amount:
+              type: integer
+              example: 2
+        global_infrastructure_setup:
+          type: object
+          required: [node, firewall_setup]
+          properties:
+            node:
+              type: string
+              example: "pve-host-02"
+            firewall_setup:
+              $ref: "#/components/schemas/FirewallSetup"
+        group_details:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroupDetail"
+
+    FirewallSetup:
+      type: object
+      properties:
+        firewall_enabled:
+          type: boolean
+        firewall_vm_id:
+          type: integer
+          nullable: true
+          description: ID des Templates das geklont wird
+        firewall_network_profile:
+          type: integer
+          nullable: true
+          description: "1 = Red + Green, 2 = Red + Orange + Green"
+        apply_firewall_interfaces_config:
+          type: boolean
+          description: Ob NICs automatisch den VNets/Bridges zugewiesen werden
+
+    GroupDetail:
+      type: object
+      required: [group_name, userlist]
+      properties:
+        group_name:
+          type: string
+          example: "Gruppe-Alpha"
+        userlist:
+          type: array
+          items:
+            type: string
+          example: ["s.mueller", "j.doe"]
+
+    Environment:
+      type: object
+      properties:
+        group_id:
+          type: string
+          example: "001"
+        group_name:
+          type: string
+          example: "ugr_m306_inf24b_grp1"
+        module:
+          type: string
+          example: "M306"
+        class:
+          type: string
+          example: "INF24-b"
+        node:
+          type: string
+          example: "pve-host-02"
+        resource_pool:
+          type: string
+          example: "rp_m306_inf24b_grp1"
+        simple_zone:
+          type: string
+          example: "sz001"
+        vnets:
+          type: array
+          items:
+            type: string
+          example: ["vn001DMZ", "vn001LAN"]
+        vms:
+          type: array
+          items:
+            type: integer
+          example: [401, 402]
+        members:
+          type: array
+          items:
+            type: string
+          example: ["s.mueller", "j.doe"]
+
+    DeleteEnvironmentRequest:
+      type: object
+      required: [group_ids]
+      properties:
+        group_ids:
+          type: array
+          items:
+            type: string
+          example: ["001", "002"]
+
+    DeleteEnvironmentResponse:
+      type: object
+      properties:
+        deleted:
+          type: array
+          items:
+            type: object
+            properties:
+              group_id:
+                type: string
+              status:
+                type: string
+                enum: [success, error]
+              deleted_resources:
+                type: object
+                properties:
+                  vms:
+                    type: array
+                    items:
+                      type: integer
+                  vnets:
+                    type: array
+                    items:
+                      type: string
+                  simple_zone:
+                    type: string
+                  resource_pool:
+                    type: string
+                  user_group:
+                    type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              group_id:
+                type: string
+              message:
+                type: string
+
+    Settings:
+      type: object
+      properties:
+        role:
+          type: string
+          description: Rolle für Resource Pool und Simple Zone
+          example: "uro_bbzblit_PVELabUsers"
+        user_group_templates:
+          type: string
+          description: User Group für Templates und vmbr1
+          example: "ugr_bbzblit_Lernende"
+        prefix_user_group:
+          type: string
+          description: Prefix für User Group Naming
+          example: "ug"
+        prefix_resourcepool:
+          type: string
+          description: Prefix für Resourcepool Naming
+          example: "rp"
+        prefix_simple_zone:
+          type: string
+          description: Prefix für Simple Zone Naming
+          example: "sz"
+        prefix_vnets:
+          type: string
+          description: Prefix für VNet Naming
+          example: "vn"
+        postfix_vnet_dmz:
+          type: string
+          description: Postfix für DMZ VNet
+          example: "DMZ"
+        postfix_vnet_lan:
+          type: string
+          description: Postfix für LAN VNet
+          example: "LAN"
+        prefix_firewall:
+          type: string
+          description: Prefix für Firewall Naming
+          example: "fw"
+        vm_storage:
+          type: string
+          description: Storage für VM Disk-Images
+          example: "pvecephpool01"
+        template_storage:
+          type: string
+          description: Storage für Templates/ISOs
+          example: "templates"
+        wan_interface:
+          type: string
+          description: WAN Schnittstelle
+          example: "vmbr1"
+
+    Group:
+      type: object
+      properties:
+        group_name:
+          type: string
+
+    Node:
+      type: object
+      properties:
+        node:
+          type: string
+
+    VM:
+      type: object
+      properties:
+        vmid:
+          type: integer
+        name:
+          type: string
+        node:
+          type: string
+
+    Storage:
+      type: object
+      properties:
+        storage:
+          type: string
+        type:
+          type: string
+        content:
+          type: string
+        active:
+          type: integer
+        shared:
+          type: integer
+        total:
+          type: integer
+          format: int64
+        used:
+          type: integer
+          format: int64
+        avail:
+          type: integer
+          format: int64
+
+    Role:
+      type: object
+      properties:
+        role:
+          type: string
+
+    InfrastructureResponse:
+      type: object
+      properties:
+        firewall_setup:
+          $ref: "#/components/schemas/FirewallSetup"

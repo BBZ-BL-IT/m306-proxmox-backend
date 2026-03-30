@@ -1,6 +1,6 @@
 use axum::{
     Router, middleware,
-    routing::{get, post},
+    routing::{delete, get, post},
 };
 
 use crate::state::AppState;
@@ -11,10 +11,14 @@ pub fn build_routes(state: AppState) -> Router {
     let protected = Router::new()
         .route("/auth/verify", get(handlers::auth::verify))
         .route(
-            "/umgebung/create",
-            post(handlers::umgebung::create_umgebung),
+            "/api/config/create",
+            post(handlers::environment::create_environment),
         )
-        .route("/nodes", get(handlers::nodes::list_nodes))
+        .route(
+            "/api/environment/delete",
+            delete(handlers::environment::delete_environment),
+        )
+        .route("/api/node/list", get(handlers::nodes::list_nodes))
         //.layer(middleware::from_fn_with_state(
         //    state.clone(),
         //   mw::auth_basic::basic_auth,

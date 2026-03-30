@@ -1,10 +1,10 @@
 use crate::state::AppState;
 
-pub struct UmgebungClient;
+pub struct EnvironmentClient;
 
-impl UmgebungClient {
-    /// Creates a new VM (Umgebung) in Proxmox by cloning a template via the Proxmox API.
-    pub async fn create_umgebung(
+impl EnvironmentClient {
+    /// Creates a new VM (environment) in Proxmox by cloning a template via the Proxmox API.
+    pub async fn create_environment(
         state: &AppState,
         node: &str,
         template_vm_id: u32,
@@ -36,5 +36,31 @@ impl UmgebungClient {
             .await?;
 
         Ok(response)
+    }
+
+    /// Deletes a VM (environment) in Proxmox via the Proxmox API.
+    pub async fn delete_environment(
+        state: &AppState,
+        node: &str,
+        vm_id: u32,
+    ) -> Result<serde_json::Value, reqwest::Error> {
+        let url = format!(
+            "{}/api2/json/nodes/{}/qemu/{}",
+            state.proxmox_url, node, vm_id
+        );
+
+        let auth_header = format!(
+            "PVEAPIToken={}={}",
+            state.proxmox_token_id, state.proxmox_token_secret
+        );
+
+        state
+            .http_client
+            .delete(&url)
+            .header("Authorization", &auth_header)
+            .send()
+            .await?
+            .json::<serde_json::Value>()
+            .await
     }
 }

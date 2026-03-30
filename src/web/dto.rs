@@ -34,3 +34,8 @@ pub struct GroupDetail {
     pub group_name: String,
     pub userlist: Vec<String>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct DeleteEnvironmentRequest {
+    pub group_ids: Vec<String>,
+}
