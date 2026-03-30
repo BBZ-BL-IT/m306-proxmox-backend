@@ -1,4 +1,6 @@
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
+
+use rusqlite::Connection;
 
 use crate::config::Settings;
 
@@ -11,4 +13,5 @@ pub struct AppState {
     pub password_admin: String,
     pub http_client: reqwest::Client,
     pub settings: Arc<RwLock<Settings>>,
+    pub db: Arc<Mutex<Connection>>,
 }

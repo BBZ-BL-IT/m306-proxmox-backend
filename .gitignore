@@ -8,6 +8,9 @@
 # Exclude .example
 !.env.example
 
+# Data
+data/
+
 # Nix
 .envrc
 .direnv
