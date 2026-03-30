@@ -5,4 +5,5 @@ pub struct AppState {
     pub proxmox_token_secret: String,
     pub username_admin: String,
     pub password_admin: String,
+    pub http_client: reqwest::Client,
 }

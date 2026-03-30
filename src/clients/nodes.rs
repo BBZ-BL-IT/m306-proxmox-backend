@@ -12,11 +12,8 @@ impl NodesClient {
             state.proxmox_token_id, state.proxmox_token_secret
         );
 
-        let client = reqwest::Client::builder()
-            .danger_accept_invalid_certs(true)
-            .build()?;
-
-        client
+        state
+            .http_client
             .get(&url)
             .header("Authorization", &auth_header)
             .send()
