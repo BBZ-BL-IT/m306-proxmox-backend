@@ -14,6 +14,7 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 
 # HTTP
 reqwest = { version = "0.13", features = ["json", "form", "native-tls"] }
+tower-http = { version = "0.6", features = ["cors"] }
 
 # Observability
 tracing = "0.1"

@@ -40,6 +40,7 @@ pub struct AppConfig {
     pub vm_storage: String,
     pub template_storage: String,
     pub wan_interface: String,
+    pub cors_origin: Option<String>,
 }
 
 impl AppConfig {

@@ -25,7 +25,7 @@ pub async fn run(config: AppConfig) -> anyhow::Result<()> {
         db: Arc::new(Mutex::new(conn)),
     };
 
-    let app = routes::build_routes(state);
+    let app = routes::build_routes(state, config.cors_origin);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.server_port));
     let listener = tokio::net::TcpListener::bind(&addr).await?;
