@@ -15,6 +15,10 @@ pub fn build_routes(state: AppState) -> Router {
             post(handlers::environment::create_environment),
         )
         .route(
+            "/api/environment/list",
+            get(handlers::environment::list_environments),
+        )
+        .route(
             "/api/environment/delete",
             delete(handlers::environment::delete_environment),
         )
