@@ -5,6 +5,8 @@ use crate::{config::AppConfig, routes, state};
 pub async fn run(config: AppConfig) -> anyhow::Result<()> {
     let http_client = build_http_client(&config)?;
 
+    let settings = std::sync::Arc::new(std::sync::RwLock::new(config.settings()));
+
     let state = state::AppState {
         proxmox_url: config.proxmox_url,
         proxmox_token_id: config.proxmox_token_id,
@@ -12,6 +14,7 @@ pub async fn run(config: AppConfig) -> anyhow::Result<()> {
         username_admin: config.username_admin,
         password_admin: config.password_admin,
         http_client,
+        settings,
     };
 
     let app = routes::build_routes(state);

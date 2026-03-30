@@ -15,6 +15,7 @@ pub fn build_routes(state: AppState) -> Router {
             post(handlers::umgebung::create_umgebung),
         )
         .route("/nodes", get(handlers::nodes::list_nodes))
+        .route("/api/settings", get(handlers::settings::get_settings).put(handlers::settings::update_settings))
         //.layer(middleware::from_fn_with_state(
         //    state.clone(),
         //   mw::auth_basic::basic_auth,
