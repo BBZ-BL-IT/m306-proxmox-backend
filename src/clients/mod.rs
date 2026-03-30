@@ -3,3 +3,4 @@
 ///
 pub mod nodes;
 pub mod environment;
+pub mod proxmox;

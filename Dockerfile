@@ -14,8 +14,9 @@ FROM debian:trixie-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 RUN useradd --create-home appuser
-USER appuser
 WORKDIR /usr/local/bin
+RUN mkdir -p data && chown appuser:appuser data
+USER appuser
 COPY --from=builder /app/target/release/loomox /usr/local/bin/loomox
 ENV RUST_LOG=info
 EXPOSE 3000

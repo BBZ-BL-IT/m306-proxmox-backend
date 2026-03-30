@@ -1,0 +1,30 @@
+services:
+  proxmox-backend:
+    image: bbzbltimeon/m306-proxmox-backend:latest
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    volumes:
+      - backend-data:/usr/local/bin/data
+    environment:
+      # Proxmox connection
+      APP_PROXMOX_URL: https://your-proxmox-host:8006
+      APP_PROXMOX_TOKEN_ID: user@realm!token_name
+      APP_PROXMOX_TOKEN_SECRET: your-token-secret
+      APP_SSL_VERIFY: "false"
+
+      # Admin credentials (Basic Auth)
+      APP_USERNAME_ADMIN: changeme
+      APP_PASSWORD_ADMIN: changeme
+
+      # CORS
+      APP_CORS_ORIGIN: http://localhost:5173
+
+      # Logging
+      RUST_LOG: info
+
+      # Settings (role, prefixes, storage, etc.) are managed at runtime
+      # via PUT /api/settings and persisted in the SQLite database.
+
+volumes:
+  backend-data:

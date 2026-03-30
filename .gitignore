@@ -11,6 +11,10 @@
 # Data
 data/
 
+# Docker
+docker-compose.yml
+!docker-compose.example.yml
+
 # Nix
 .envrc
 .direnv
