@@ -17,7 +17,6 @@ RUN useradd --create-home appuser
 USER appuser
 WORKDIR /usr/local/bin
 COPY --from=builder /app/target/release/loomox /usr/local/bin/loomox
-COPY config.docker.env /usr/local/bin/.env
 ENV RUST_LOG=info
 EXPOSE 3000
 ENTRYPOINT ["loomox"]
