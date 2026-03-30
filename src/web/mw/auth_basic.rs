@@ -34,7 +34,10 @@ pub async fn basic_auth(
         return Err(StatusCode::UNAUTHORIZED);
     };
 
-    if username == state.username_admin && pass == state.password_admin {
+    let expected_user = state.username_admin.as_deref().unwrap_or_default();
+    let expected_pass = state.password_admin.as_deref().unwrap_or_default();
+
+    if username == expected_user && pass == expected_pass {
         Ok(next.run(req).await)
     } else {
         Err(StatusCode::UNAUTHORIZED)

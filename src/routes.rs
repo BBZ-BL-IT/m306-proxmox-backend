@@ -10,7 +10,7 @@ use crate::web::handlers;
 use crate::web::mw;
 
 pub fn build_routes(state: AppState, cors_origin: Option<String>) -> Router {
-    let protected = Router::new()
+    let mut protected = Router::new()
         .route("/api/auth/verify", get(handlers::auth::verify))
         .route(
             "/api/config/create",
@@ -34,12 +34,20 @@ pub fn build_routes(state: AppState, cors_origin: Option<String>) -> Router {
             "/api/infrastructure/{vm_id}",
             get(handlers::dropdown::get_infrastructure),
         )
-        .route("/api/settings", get(handlers::settings::get_settings).put(handlers::settings::update_settings))
-        //.layer(middleware::from_fn_with_state(
-        //    state.clone(),
-        //   mw::auth_basic::basic_auth,
-        // ))
-    ;
+        .route(
+            "/api/settings",
+            get(handlers::settings::get_settings).put(handlers::settings::update_settings),
+        );
+
+    if state.username_admin.is_some() && state.password_admin.is_some() {
+        tracing::info!("Basic auth is enabled");
+        protected = protected.layer(middleware::from_fn_with_state(
+            state.clone(),
+            mw::auth_basic::basic_auth,
+        ));
+    } else {
+        tracing::warn!("APP_USERNAME_ADMIN is not set -> basic auth is disabled");
+    }
 
     let public = Router::new().route("/health", get(handlers::health::check_health));
 
@@ -55,10 +63,9 @@ pub fn build_routes(state: AppState, cors_origin: Option<String>) -> Router {
             app = app.layer(cors);
         }
         None => {
-            tracing::warn!("APP_CORS_ORIGIN is not set — CORS is disabled");
+            tracing::warn!("APP_CORS_ORIGIN is not set -> CORS is disabled");
         }
     };
 
-    app
-        .with_state(state)
+    app.with_state(state)
 }

@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateEnvironmentRequest {
@@ -8,6 +8,7 @@ pub struct CreateEnvironmentRequest {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct ModulConfiguration {
     pub modulnumber: String,
     pub class: String,
@@ -22,6 +23,7 @@ pub struct GlobalInfrastructureSetup {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct FirewallSetup {
     pub firewall_enabled: bool,
     pub firewall_vm_id: Option<u32>,

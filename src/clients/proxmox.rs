@@ -10,7 +10,6 @@ impl ProxmoxClient {
         )
     }
 
-    /// Fetches all users via GET /api2/json/access/users.
     pub async fn list_users(state: &AppState) -> Result<serde_json::Value, reqwest::Error> {
         let url = format!("{}/api2/json/access/users", state.proxmox_url);
 
@@ -24,7 +23,6 @@ impl ProxmoxClient {
             .await
     }
 
-    /// Fetches all groups via GET /api2/json/access/groups.
     pub async fn list_groups(state: &AppState) -> Result<serde_json::Value, reqwest::Error> {
         let url = format!("{}/api2/json/access/groups", state.proxmox_url);
 
@@ -38,7 +36,6 @@ impl ProxmoxClient {
             .await
     }
 
-    /// Fetches all VMs across all nodes via GET /api2/json/nodes/{node}/qemu.
     pub async fn list_vms(
         state: &AppState,
         node: &str,
@@ -55,7 +52,6 @@ impl ProxmoxClient {
             .await
     }
 
-    /// Fetches all storage pools via GET /api2/json/storage.
     pub async fn list_storage(state: &AppState) -> Result<serde_json::Value, reqwest::Error> {
         let url = format!("{}/api2/json/storage", state.proxmox_url);
 
@@ -69,7 +65,6 @@ impl ProxmoxClient {
             .await
     }
 
-    /// Fetches all roles via GET /api2/json/access/roles.
     pub async fn list_roles(state: &AppState) -> Result<serde_json::Value, reqwest::Error> {
         let url = format!("{}/api2/json/access/roles", state.proxmox_url);
 
@@ -83,7 +78,6 @@ impl ProxmoxClient {
             .await
     }
 
-    /// Fetches firewall options for a VM via GET /api2/json/nodes/{node}/qemu/{vmid}/firewall/options.
     pub async fn get_vm_firewall(
         state: &AppState,
         node: &str,
@@ -104,7 +98,6 @@ impl ProxmoxClient {
             .await
     }
 
-    /// Fetches network interfaces for a VM via GET /api2/json/nodes/{node}/qemu/{vmid}/config.
     pub async fn get_vm_config(
         state: &AppState,
         node: &str,

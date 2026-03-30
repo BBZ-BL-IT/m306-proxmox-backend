@@ -10,7 +10,6 @@ impl EnvironmentClient {
         )
     }
 
-    /// Creates a new VM (environment) in Proxmox by cloning a template via the Proxmox API.
     pub async fn create_environment(
         state: &AppState,
         node: &str,
@@ -38,10 +37,7 @@ impl EnvironmentClient {
             .await
     }
 
-    /// Lists all access groups from Proxmox.
-    pub async fn list_groups(
-        state: &AppState,
-    ) -> Result<serde_json::Value, reqwest::Error> {
+    pub async fn list_groups(state: &AppState) -> Result<serde_json::Value, reqwest::Error> {
         let url = format!("{}/api2/json/access/groups", state.proxmox_url);
 
         state
@@ -54,7 +50,6 @@ impl EnvironmentClient {
             .await
     }
 
-    /// Gets details (including members) of a specific group.
     pub async fn get_group(
         state: &AppState,
         group_id: &str,
@@ -71,7 +66,6 @@ impl EnvironmentClient {
             .await
     }
 
-    /// Gets a resource pool and its members (VMs).
     pub async fn get_pool(
         state: &AppState,
         pool_id: &str,
@@ -88,7 +82,6 @@ impl EnvironmentClient {
             .await
     }
 
-    /// Stops a VM.
     pub async fn stop_vm(
         state: &AppState,
         node: &str,
@@ -109,7 +102,6 @@ impl EnvironmentClient {
             .await
     }
 
-    /// Deletes a VM.
     pub async fn delete_vm(
         state: &AppState,
         node: &str,
@@ -130,15 +122,11 @@ impl EnvironmentClient {
             .await
     }
 
-    /// Deletes a VNet.
     pub async fn delete_vnet(
         state: &AppState,
         vnet: &str,
     ) -> Result<serde_json::Value, reqwest::Error> {
-        let url = format!(
-            "{}/api2/json/cluster/sdn/vnets/{}",
-            state.proxmox_url, vnet
-        );
+        let url = format!("{}/api2/json/cluster/sdn/vnets/{}", state.proxmox_url, vnet);
 
         state
             .http_client
@@ -150,15 +138,11 @@ impl EnvironmentClient {
             .await
     }
 
-    /// Deletes an SDN zone.
     pub async fn delete_zone(
         state: &AppState,
         zone: &str,
     ) -> Result<serde_json::Value, reqwest::Error> {
-        let url = format!(
-            "{}/api2/json/cluster/sdn/zones/{}",
-            state.proxmox_url, zone
-        );
+        let url = format!("{}/api2/json/cluster/sdn/zones/{}", state.proxmox_url, zone);
 
         state
             .http_client
@@ -170,7 +154,6 @@ impl EnvironmentClient {
             .await
     }
 
-    /// Deletes a resource pool.
     pub async fn delete_pool(
         state: &AppState,
         pool_id: &str,
@@ -187,15 +170,11 @@ impl EnvironmentClient {
             .await
     }
 
-    /// Deletes an access group.
     pub async fn delete_group(
         state: &AppState,
         group_id: &str,
     ) -> Result<serde_json::Value, reqwest::Error> {
-        let url = format!(
-            "{}/api2/json/access/groups/{}",
-            state.proxmox_url, group_id
-        );
+        let url = format!("{}/api2/json/access/groups/{}", state.proxmox_url, group_id);
 
         state
             .http_client

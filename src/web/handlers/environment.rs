@@ -7,15 +7,12 @@ use crate::clients::environment::EnvironmentClient;
 use crate::state::AppState;
 use crate::web::dto::{CreateEnvironmentRequest, DeleteEnvironmentRequest, ListEnvironmentParams};
 
-/// Parsed environment info derived from a Proxmox user group name.
-/// Group name convention: `ugr_<module>_<class>_grp<N>`
 struct ParsedEnvironment {
     group_id: String,
     group_name: String,
     module: String,
     class: String,
     suffix: String,
-    grp_num: u32,
 }
 
 fn parse_group_name(group_name: &str) -> Option<ParsedEnvironment> {
@@ -34,7 +31,6 @@ fn parse_group_name(group_name: &str) -> Option<ParsedEnvironment> {
         module: module_raw.to_uppercase(),
         class: class_raw.to_string(),
         suffix: stripped.to_string(),
-        grp_num,
     })
 }
 
@@ -60,7 +56,10 @@ pub async fn list_environments(
         }
     };
 
-    let groups = groups_response["data"].as_array().cloned().unwrap_or_default();
+    let groups = groups_response["data"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
     let mut environments = Vec::new();
 
     for group in &groups {
@@ -74,7 +73,6 @@ pub async fn list_environments(
             None => continue,
         };
 
-        // Apply query filters
         if let Some(ref module_filter) = params.module {
             if !parsed.module.eq_ignore_ascii_case(module_filter) {
                 continue;
@@ -91,7 +89,6 @@ pub async fn list_environments(
             }
         }
 
-        // Derive related resource names from naming convention
         let resource_pool = format!("rp_{}", parsed.suffix);
         let simple_zone = format!("sz{}", parsed.group_id);
         let vnets = vec![
@@ -99,7 +96,6 @@ pub async fn list_environments(
             format!("vn{}LAN", parsed.group_id),
         ];
 
-        // Get group members (users)
         let members: Vec<String> = match EnvironmentClient::get_group(&state, group_name).await {
             Ok(data) => data["data"]["members"]
                 .as_array()
@@ -111,7 +107,6 @@ pub async fn list_environments(
             Err(_) => vec![],
         };
 
-        // Get VMs and node from the resource pool
         let mut vms: Vec<u32> = Vec::new();
         let mut node = String::new();
         if let Ok(pool_data) = EnvironmentClient::get_pool(&state, &resource_pool).await {
@@ -149,7 +144,6 @@ pub async fn list_environments(
     (StatusCode::OK, Json(serde_json::json!(environments))).into_response()
 }
 
-
 pub async fn create_environment(
     State(state): State<AppState>,
     Json(body): Json<CreateEnvironmentRequest>,
@@ -162,7 +156,10 @@ pub async fn create_environment(
         modulnumber,
         class,
         groups = body.group_details.len(),
-        firewall = body.global_infrastructure_setup.firewall_setup.firewall_enabled,
+        firewall = body
+            .global_infrastructure_setup
+            .firewall_setup
+            .firewall_enabled,
         "Creating environment"
     );
 
@@ -172,7 +169,6 @@ pub async fn create_environment(
         let group_id = format!("{:03}", i + 1);
         let group_name = &group.group_name;
 
-        // Clone firewall VM if enabled
         if body
             .global_infrastructure_setup
             .firewall_setup
@@ -243,13 +239,15 @@ pub async fn delete_environment(
         }
     };
 
-    let groups = groups_response["data"].as_array().cloned().unwrap_or_default();
+    let groups = groups_response["data"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
 
     let mut deleted: Vec<serde_json::Value> = Vec::new();
     let mut errors: Vec<serde_json::Value> = Vec::new();
 
     for target_group_id in &body.group_ids {
-        // Find the matching environment group
         let matching_env = groups.iter().find_map(|g| {
             let name = g["groupid"].as_str()?;
             let parsed = parse_group_name(name)?;
@@ -276,7 +274,6 @@ pub async fn delete_environment(
         let vnet_dmz = format!("vn{}DMZ", parsed.group_id);
         let vnet_lan = format!("vn{}LAN", parsed.group_id);
 
-        // Get VMs from the resource pool
         let mut vm_ids: Vec<u32> = Vec::new();
         let mut node = String::new();
         if let Ok(pool_data) = EnvironmentClient::get_pool(&state, &resource_pool).await {
@@ -305,10 +302,8 @@ pub async fn delete_environment(
             "Deleting environment resources"
         );
 
-        // 1. Stop and delete VMs
         for vm_id in &vm_ids {
             if !node.is_empty() {
-                // Best-effort stop before delete
                 let _ = EnvironmentClient::stop_vm(&state, &node, *vm_id).await;
                 if let Err(e) = EnvironmentClient::delete_vm(&state, &node, *vm_id).await {
                     group_errors.push(format!("Failed to delete VM {}: {}", vm_id, e));
@@ -316,26 +311,25 @@ pub async fn delete_environment(
             }
         }
 
-        // 2. Delete VNets
         for vnet in [&vnet_dmz, &vnet_lan] {
             if let Err(e) = EnvironmentClient::delete_vnet(&state, vnet).await {
                 group_errors.push(format!("Failed to delete VNet {}: {}", vnet, e));
             }
         }
 
-        // 3. Delete Simple Zone
         if let Err(e) = EnvironmentClient::delete_zone(&state, &simple_zone).await {
             group_errors.push(format!("Failed to delete zone {}: {}", simple_zone, e));
         }
 
-        // 4. Delete Resource Pool
         if let Err(e) = EnvironmentClient::delete_pool(&state, &resource_pool).await {
             group_errors.push(format!("Failed to delete pool {}: {}", resource_pool, e));
         }
 
-        // 5. Delete User Group
         if let Err(e) = EnvironmentClient::delete_group(&state, &parsed.group_name).await {
-            group_errors.push(format!("Failed to delete group {}: {}", parsed.group_name, e));
+            group_errors.push(format!(
+                "Failed to delete group {}: {}",
+                parsed.group_name, e
+            ));
         }
 
         if group_errors.is_empty() {

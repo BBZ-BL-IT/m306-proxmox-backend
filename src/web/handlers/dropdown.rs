@@ -212,7 +212,6 @@ pub async fn get_infrastructure(
         }
     };
 
-    // Find the VM on one of the nodes
     let mut vm_node: Option<String> = None;
     for node in &node_names {
         if let Ok(data) = ProxmoxClient::list_vms(&state, node).await {
@@ -245,13 +244,11 @@ pub async fn get_infrastructure(
         }
     };
 
-    // Fetch firewall options
     let firewall_enabled = match ProxmoxClient::get_vm_firewall(&state, &node, vm_id).await {
         Ok(data) => data["data"]["enable"].as_u64().unwrap_or(0) == 1,
         Err(_) => false,
     };
 
-    // Count network interfaces from VM config to determine network profile
     let network_profile = match ProxmoxClient::get_vm_config(&state, &node, vm_id).await {
         Ok(data) => {
             let config = &data["data"];
