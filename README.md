@@ -6,7 +6,7 @@ A lightweight Rust backend service for managing Proxmox virtualization environme
 
 ### Core Infrastructure
 - **Proxmox API Integration** - Seamless proxy and management of Proxmox API calls with token-based authentication
-- **Basic Authentication Middleware** - HTTP Basic Auth with Base64 encoding for protected endpoints
+- **Basic Authentication Middleware** - Optional HTTP Basic Auth with Base64 encoding for protected endpoints (disabled by default if credentials not provided)
 - **Health Checks** - Endpoint monitoring and diagnostics for application status verification
 - **Async Request Handling** - High-performance concurrent request processing using Tokio and Axum
 - **Comprehensive Logging** - Structured tracing with configurable log levels (trace, debug, info, warn, error)
@@ -23,7 +23,8 @@ A lightweight Rust backend service for managing Proxmox virtualization environme
 ### Security & Configuration
 - **Proxmox API Token Authentication** - Secure token-based authentication with ID and Secret pairs
 - **Admin User Management** - Configurable admin credentials for API access control
-- **Environment Variable Configuration** - All configuration via `APP_` prefixed environment variables
+- **Environment Variable Configuration** - Core configuration via `APP_` prefixed environment variables
+- **Runtime Settings** - Application settings (prefixes, storage, etc.) persisted in SQLite database and configurable via REST API
 - **SSL Verification Control** - Enable/disable SSL verification and custom certificate paths 
 
 ## Tech Stack
@@ -45,30 +46,41 @@ A lightweight Rust backend service for managing Proxmox virtualization environme
 
 All app configs must start with `APP_`:
 
-| Variable                    | Description                                                 | Required?                                 |
-|-----------------------------|-------------------------------------------------------------|-------------------------------------------|
-| `APP_PROXMOX_URL`           | Proxmox server URL (e.g., `10.142.203.230:8006`)            | Yes - Required for Proxmox API connection |
-| `APP_SERVER_PORT`           | Server port (default: 3000)                                 | No - Defaults to 3000 if not set          |
-| `APP_PROXMOX_TOKEN_ID`      | Token ID (format: `user@realm!token_name`)                  | Yes - Required for Proxmox authentication |
-| `APP_PROXMOX_TOKEN_SECRET`  | Token secret                                                | Yes - Required for Proxmox authentication |
-| `APP_USERNAME_ADMIN`        | Admin username for basic auth                               | Yes - Required for endpoint protection    |
-| `APP_PASSWORD_ADMIN`        | Admin password for basic auth                               | Yes - Required for endpoint protection    |
-| `APP_CORS_ORIGIN`           | CORS origin URL (e.g., `http://localhost:3001`)             | No - CORS disabled if not set             |
-| `APP_SSL_VERIFY`            | Enable/disable SSL verification (default: true)             | No - Defaults to true if not set          |
-| `APP_SSL_CERT_PATH`         | Path to custom SSL certificate (PEM format)                 | No - Optional custom certificate          |
-| `APP_ROLE`                  | Default role configuration                                  | No - Optional role settings               |
-| `APP_USER_GROUP_TEMPLATES`  | User group template configurations                          | No - Optional template settings           |
-| `APP_PREFIX_USER_GROUP`     | Prefix for user group naming                                | No - Optional naming prefix               |
-| `APP_PREFIX_RESOURCEPOOL`   | Prefix for resource pool naming                             | No - Optional naming prefix               |
-| `APP_PREFIX_SIMPLE_ZONE`    | Prefix for simple zone naming                               | No - Optional naming prefix               |
-| `APP_PREFIX_VNETS`          | Prefix for virtual networks                                 | No - Optional naming prefix               |
-| `APP_POSTFIX_VNET_DMZ`      | Postfix for DMZ virtual network                             | No - Optional naming postfix              |
-| `APP_POSTFIX_VNET_LAN`      | Postfix for LAN virtual network                             | No - Optional naming postfix              |
-| `APP_PREFIX_FIREWALL`       | Prefix for firewall VM naming                               | No - Optional naming prefix               |
-| `APP_VM_STORAGE`            | Storage location for virtual machines                       | No - Optional storage configuration       |
-| `APP_TEMPLATE_STORAGE`      | Storage location for VM templates                           | No - Optional storage configuration       |
-| `APP_WAN_INTERFACE`         | WAN interface configuration                                 | No - Optional network configuration       |
-| `RUST_LOG`                  | Log level: `trace`, `debug`, `info`, `warn`, `error`, `off` | No - Logging disabled by default          |
+#### Startup Configuration (Environment Variables Only)
+
+These settings are loaded from environment variables at startup and cannot change without restarting:
+
+| Variable                   | Description                                                 | Required?                                     |
+|----------------------------|-------------------------------------------------------------|-----------------------------------------------|
+| `APP_PROXMOX_URL`          | Proxmox server URL (e.g., `10.142.203.230:8006`)            | **Yes** - Required for Proxmox API connection |
+| `APP_PROXMOX_TOKEN_ID`     | Token ID (format: `user@realm!token_name`)                  | **Yes** - Required for Proxmox authentication |
+| `APP_PROXMOX_TOKEN_SECRET` | Token secret                                                | **Yes** - Required for Proxmox authentication |
+| `APP_USERNAME_ADMIN`       | Admin username for basic auth                               | No - Basic auth disabled when empty           |
+| `APP_PASSWORD_ADMIN`       | Admin password for basic auth                               | No - Basic auth disabled when empty           |
+| `APP_SERVER_PORT`          | Server port (default: 3000)                                 | No - Defaults to 3000 if not set              |
+| `APP_CORS_ORIGIN`          | CORS origin URL (e.g., `http://localhost:3001`)             | No - CORS disabled if not set                 |
+| `APP_SSL_VERIFY`           | Enable/disable SSL verification (default: true)             | No - Defaults to true if not set              |
+| `APP_SSL_CERT_PATH`        | Path to custom SSL certificate (PEM format)                 | No - Optional custom certificate              |
+| `RUST_LOG`                 | Log level: `trace`, `debug`, `info`, `warn`, `error`, `off` | No - Logging disabled by default              |
+
+#### Runtime Settings (Database Persisted, Env Var Defaults Only)
+
+These settings are persisted in SQLite and can be modified at runtime via API. Environment variables are **only used as defaults** if the database is empty:
+
+| Variable                   | Description                                                 | Default Value                    |
+|----------------------------|-------------------------------------------------------------|----------------------------------|
+| `APP_ROLE`                 | Default role for resource pool assignment                   | `uro_bbzblit_PVELabUsers`        |
+| `APP_USER_GROUP_TEMPLATES` | User group templates for bulk operations                    | `ugr_bbzblit_Lernende`           |
+| `APP_PREFIX_USER_GROUP`    | Prefix for user group naming                                | `ug`                             |
+| `APP_PREFIX_RESOURCEPOOL`  | Prefix for resource pool naming                             | `rp`                             |
+| `APP_PREFIX_SIMPLE_ZONE`   | Prefix for simple zone naming                               | `sz`                             |
+| `APP_PREFIX_VNETS`         | Prefix for virtual networks                                 | `vn`                             |
+| `APP_POSTFIX_VNET_DMZ`     | Postfix for DMZ virtual network                             | `DMZ`                            |
+| `APP_POSTFIX_VNET_LAN`     | Postfix for LAN virtual network                             | `LAN`                            |
+| `APP_PREFIX_FIREWALL`      | Prefix for firewall VM naming                               | `fw`                             |
+| `APP_VM_STORAGE`           | VM storage location (ceph pool or local storage)            | `pvecephpool01`                  |
+| `APP_TEMPLATE_STORAGE`     | Template storage location                                   | `templates`                      |
+| `APP_WAN_INTERFACE`        | WAN interface bridge name                                   | `vmbr1`                          |
 
 ## Build and Run
 
