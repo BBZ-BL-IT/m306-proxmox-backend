@@ -1,9 +1,18 @@
 use std::net::SocketAddr;
+use std::sync::{Arc, Mutex, RwLock};
 
-use crate::{config::AppConfig, routes, state};
+use crate::{config::AppConfig, db, routes, state};
 
 pub async fn run(config: AppConfig) -> anyhow::Result<()> {
     let http_client = build_http_client(&config)?;
+
+    std::fs::create_dir_all("data")?;
+    let conn = rusqlite::Connection::open("data/settings.db")?;
+    db::init_db(&conn)?;
+
+    let settings = db::load_settings(&conn)?
+        .unwrap_or_else(|| config.settings());
+    tracing::info!("Settings loaded");
 
     let state = state::AppState {
         proxmox_url: config.proxmox_url,
@@ -12,6 +21,8 @@ pub async fn run(config: AppConfig) -> anyhow::Result<()> {
         username_admin: config.username_admin,
         password_admin: config.password_admin,
         http_client,
+        settings: Arc::new(RwLock::new(settings)),
+        db: Arc::new(Mutex::new(conn)),
     };
 
     let app = routes::build_routes(state, config.cors_origin);

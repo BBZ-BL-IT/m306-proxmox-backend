@@ -1,0 +1,14 @@
+{
+  "role": "NEUE_ROLLE",
+  "user_group_templates": "ugr_test",
+  "prefix_user_group": "ug",
+  "prefix_resourcepool": "rp",
+  "prefix_simple_zone": "sz",
+  "prefix_vnets": "vn",
+  "postfix_vnet_dmz": "DMZ",
+  "postfix_vnet_lan": "LAN",
+  "prefix_firewall": "fw",
+  "vm_storage": "newstorage",
+  "template_storage": "templates",
+  "wan_interface": "vmbr1"
+}

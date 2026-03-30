@@ -25,6 +25,7 @@ pub fn build_routes(state: AppState, cors_origin: Option<String>) -> Router {
             delete(handlers::environment::delete_environment),
         )
         .route("/api/node/list", get(handlers::nodes::list_nodes))
+        .route("/api/settings", get(handlers::settings::get_settings).put(handlers::settings::update_settings))
         //.layer(middleware::from_fn_with_state(
         //    state.clone(),
         //   mw::auth_basic::basic_auth,
