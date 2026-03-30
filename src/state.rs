@@ -1,7 +1,9 @@
-///
-/// Here we will define the global appstate that will be shared
-///
-pub struct State {
+#[derive(Clone)]
+pub struct AppState {
     pub proxmox_url: String,
+    pub proxmox_token_id: String,
+    pub proxmox_token_secret: String,
+    pub username_admin: String,
+    pub password_admin: String,
+    pub http_client: reqwest::Client,
 }
-

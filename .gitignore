@@ -7,3 +7,7 @@
 
 # Exclude .example
 !.env.example
+
+# Nix
+.envrc
+.direnv

@@ -31,3 +31,8 @@ _Options_:
 - RUST_LOG=warn
 - RUST_LOG=error # least verbose
 - RUST_LOG=off # silence everything
+
+# Todo
+
+- SSL-Certificate on/off env variable
+- Import of proxmox ssl certificate
