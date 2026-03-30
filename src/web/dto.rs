@@ -39,3 +39,10 @@ pub struct GroupDetail {
 pub struct DeleteEnvironmentRequest {
     pub group_ids: Vec<String>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct ListEnvironmentParams {
+    pub module: Option<String>,
+    pub class: Option<String>,
+    pub group_id: Option<String>,
+}

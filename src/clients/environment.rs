@@ -3,6 +3,13 @@ use crate::state::AppState;
 pub struct EnvironmentClient;
 
 impl EnvironmentClient {
+    fn auth_header(state: &AppState) -> String {
+        format!(
+            "PVEAPIToken={}={}",
+            state.proxmox_token_id, state.proxmox_token_secret
+        )
+    }
+
     /// Creates a new VM (environment) in Proxmox by cloning a template via the Proxmox API.
     pub async fn create_environment(
         state: &AppState,
@@ -16,15 +23,10 @@ impl EnvironmentClient {
             state.proxmox_url, node, template_vm_id
         );
 
-        let auth_header = format!(
-            "PVEAPIToken={}={}",
-            state.proxmox_token_id, state.proxmox_token_secret
-        );
-
-        let response = state
+        state
             .http_client
             .post(&url)
-            .header("Authorization", &auth_header)
+            .header("Authorization", Self::auth_header(state))
             .form(&[
                 ("newid", new_vm_id.to_string()),
                 ("name", name.to_string()),
@@ -32,14 +34,83 @@ impl EnvironmentClient {
             ])
             .send()
             .await?
-            .json::<serde_json::Value>()
-            .await?;
-
-        Ok(response)
+            .json()
+            .await
     }
 
-    /// Deletes a VM (environment) in Proxmox via the Proxmox API.
-    pub async fn delete_environment(
+    /// Lists all access groups from Proxmox.
+    pub async fn list_groups(
+        state: &AppState,
+    ) -> Result<serde_json::Value, reqwest::Error> {
+        let url = format!("{}/api2/json/access/groups", state.proxmox_url);
+
+        state
+            .http_client
+            .get(&url)
+            .header("Authorization", Self::auth_header(state))
+            .send()
+            .await?
+            .json()
+            .await
+    }
+
+    /// Gets details (including members) of a specific group.
+    pub async fn get_group(
+        state: &AppState,
+        group_id: &str,
+    ) -> Result<serde_json::Value, reqwest::Error> {
+        let url = format!("{}/api2/json/access/groups/{}", state.proxmox_url, group_id);
+
+        state
+            .http_client
+            .get(&url)
+            .header("Authorization", Self::auth_header(state))
+            .send()
+            .await?
+            .json()
+            .await
+    }
+
+    /// Gets a resource pool and its members (VMs).
+    pub async fn get_pool(
+        state: &AppState,
+        pool_id: &str,
+    ) -> Result<serde_json::Value, reqwest::Error> {
+        let url = format!("{}/api2/json/pools/{}", state.proxmox_url, pool_id);
+
+        state
+            .http_client
+            .get(&url)
+            .header("Authorization", Self::auth_header(state))
+            .send()
+            .await?
+            .json()
+            .await
+    }
+
+    /// Stops a VM.
+    pub async fn stop_vm(
+        state: &AppState,
+        node: &str,
+        vm_id: u32,
+    ) -> Result<serde_json::Value, reqwest::Error> {
+        let url = format!(
+            "{}/api2/json/nodes/{}/qemu/{}/status/stop",
+            state.proxmox_url, node, vm_id
+        );
+
+        state
+            .http_client
+            .post(&url)
+            .header("Authorization", Self::auth_header(state))
+            .send()
+            .await?
+            .json()
+            .await
+    }
+
+    /// Deletes a VM.
+    pub async fn delete_vm(
         state: &AppState,
         node: &str,
         vm_id: u32,
@@ -49,18 +120,90 @@ impl EnvironmentClient {
             state.proxmox_url, node, vm_id
         );
 
-        let auth_header = format!(
-            "PVEAPIToken={}={}",
-            state.proxmox_token_id, state.proxmox_token_secret
+        state
+            .http_client
+            .delete(&url)
+            .header("Authorization", Self::auth_header(state))
+            .send()
+            .await?
+            .json()
+            .await
+    }
+
+    /// Deletes a VNet.
+    pub async fn delete_vnet(
+        state: &AppState,
+        vnet: &str,
+    ) -> Result<serde_json::Value, reqwest::Error> {
+        let url = format!(
+            "{}/api2/json/cluster/sdn/vnets/{}",
+            state.proxmox_url, vnet
         );
 
         state
             .http_client
             .delete(&url)
-            .header("Authorization", &auth_header)
+            .header("Authorization", Self::auth_header(state))
             .send()
             .await?
-            .json::<serde_json::Value>()
+            .json()
+            .await
+    }
+
+    /// Deletes an SDN zone.
+    pub async fn delete_zone(
+        state: &AppState,
+        zone: &str,
+    ) -> Result<serde_json::Value, reqwest::Error> {
+        let url = format!(
+            "{}/api2/json/cluster/sdn/zones/{}",
+            state.proxmox_url, zone
+        );
+
+        state
+            .http_client
+            .delete(&url)
+            .header("Authorization", Self::auth_header(state))
+            .send()
+            .await?
+            .json()
+            .await
+    }
+
+    /// Deletes a resource pool.
+    pub async fn delete_pool(
+        state: &AppState,
+        pool_id: &str,
+    ) -> Result<serde_json::Value, reqwest::Error> {
+        let url = format!("{}/api2/json/pools/{}", state.proxmox_url, pool_id);
+
+        state
+            .http_client
+            .delete(&url)
+            .header("Authorization", Self::auth_header(state))
+            .send()
+            .await?
+            .json()
+            .await
+    }
+
+    /// Deletes an access group.
+    pub async fn delete_group(
+        state: &AppState,
+        group_id: &str,
+    ) -> Result<serde_json::Value, reqwest::Error> {
+        let url = format!(
+            "{}/api2/json/access/groups/{}",
+            state.proxmox_url, group_id
+        );
+
+        state
+            .http_client
+            .delete(&url)
+            .header("Authorization", Self::auth_header(state))
+            .send()
+            .await?
+            .json()
             .await
     }
 }
